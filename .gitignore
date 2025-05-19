@@ -1,0 +1,9 @@
+#input files
+/input_bags
+/input_imgs
+
+#output files
+/output_stereo
+
+#ml_models
+/pretrained
