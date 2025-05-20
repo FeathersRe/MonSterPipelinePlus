@@ -56,11 +56,12 @@ def save_camera_frames(args):
     :param args.mcap_path: path of the mcap file
     :param args.img_outdir: output path of the frame images
     """
+
     mcap_path = args.mcap_path
     img_out = args.img_outdir
+    start_offset_sec = float(args.time_offset)
+    time_step_sec = float(args.time_step)
     frame_count = int(args.frame_count)
-
-    print(img_out)
 
     left_img_path = os.path.join(img_out, "image_2")
     right_img_path = os.path.join(img_out, "image_3")
@@ -81,20 +82,42 @@ def save_camera_frames(args):
         right_img_iter = reader.iter_messages(topics=["S1/stereo2_r"])
 
         count = 0
+        last_captured_time = 0
         next_left_msg = next(left_img_iter, None)
         next_right_msg = next(right_img_iter, None)
 
+        start_time_ns = None
+
+        #Infinite loop: Time precision incorrect
         while next_left_msg and next_right_msg and count < frame_count:
             _, _, msgl = next_left_msg
             _, _, msgr = next_right_msg
+            
+            if start_time_ns == None:
+                start_time_ns = msgl.log_time
+                print(start_time_ns)
+                cutoff_time_ns = start_time_ns + int(start_offset_sec * 1e9)
+                print(cutoff_time_ns)
+                time_step_ns = int(time_step_sec * 1e9)
 
-            imgl = decode_image_msg(msgl.data)
-            imgr = decode_image_msg(msgr.data)
+            if msgl.log_time < cutoff_time_ns or msgr.log_time < cutoff_time_ns:
+                if msgl.log_time < cutoff_time_ns:
+                    next_left_msg = next(left_img_iter, None)
 
-            if msgl is not None and msgr is not None:
-                cv2.imwrite(os.path.join(left_img_path, f"left_{count:04d}.png"), imgl)
-                cv2.imwrite(os.path.join(right_img_path, f"right_{count:04d}.png"), imgr)
-                count += 1
+                if msgr.log_time < cutoff_time_ns:
+                    next_right_msg = next(right_img_iter, None)
+                
+                continue
+
+            if msgl.log_time > last_captured_time + time_step_ns:
+                    imgl = decode_image_msg(msgl.data)
+                    imgr = decode_image_msg(msgr.data)
+
+                    cv2.imwrite(os.path.join(left_img_path, f"left_{count:04d}.png"), imgl)
+                    cv2.imwrite(os.path.join(right_img_path, f"right_{count:04d}.png"), imgr)
+                    
+                    last_captured_time = msgl.log_time
+                    count += 1
 
             next_left_msg = next(left_img_iter, None)
             next_right_msg = next(right_img_iter, None)     
@@ -105,9 +128,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--mcap_path", help="path of mcap file", default="./input_bags/")
     parser.add_argument("--img_outdir", help="output directory of bag image", default="./input_imgs/")
-    #parser.add_argument("--time_offset", help="duration offset (in secs) from start to capture frames from", default=0)
+    parser.add_argument("--time_offset", help="duration offset (in secs) from start to capture frames from", default=0)
+    parser.add_argument("--time_step", help="time step (in s) between the bag frames captured", default=1)
     parser.add_argument("--frame_count", help="number of frames of bag to capture", default=5)
-
 
     args = parser.parse_args()
 
