@@ -1,0 +1,17 @@
+{
+  "name": "MonsterPipeline Env",
+  "image": "FeathersRe/monster-pipeline-env",
+  "runArgs": ["--shm-size=8g"],
+  "context": "..",
+  "workspaceFolder": "/workspace",
+  "mounts": [
+    "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached"
+  ],
+  "settings": {
+    "terminal.integrated.shell.linux": "/bin/bash"
+  },
+  "extensions": [
+    "ms-python.python"
+  ],
+  "remoteUser": "root"
+}
