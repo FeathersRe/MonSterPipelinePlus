@@ -1,11 +1,17 @@
-import argparse
 import os
+import sys
+
 import capnp
 import cv2
 import numpy as np
+import argparse
+
 from mcap.reader import make_reader
 
-image_capnp = capnp.load("./encoder/image.capnp")
+sys.path.append(os.path.join(os.path.dirname(__file__), "./vk_sdk/capnp"))
+sys.path.append('/opt/vilota/messages')
+
+import image_capnp as eCALImage
 
 def inspect_mcap(args):
     """
@@ -24,24 +30,24 @@ def inspect_mcap(args):
             print(f"Topics: {channel.topic}, Message Encoding: {channel.message_encoding}, Schema ID: {channel.schema_id}")
 
 def decode_image_msg(msg):
-    img = image_capnp.Image.from_bytes_packed(msg)
-    encoding = img.encoding
-    width = img.width
-    height = img.height
-    data = img.data
+    with eCALImage.Image.from_bytes(msg) as img:
+        encoding = img.encoding
+        width = img.width
+        height = img.height
+        data = img.data
 
-    if encoding == image_capnp.Image.Encoding.mono8:
-        img_np = np.frombuffer(data, dtype=np.uint8).reshape((height, width))
-    elif encoding == image_capnp.Image.Encoding.mono16:
-        img_np = np.frombuffer(data, dtype=np.uint16).reshape((height, width)) 
-    elif encoding == image_capnp.Image.Encoding.bgr8:
-        img_np = np.frombuffer(data, dtype=np.uint8).reshape((height, width, 3))
-    elif encoding == image_capnp.Image.Encoding.jpeg or image_capnp.Image.Encoding.png:
-        img_np = cv2.imdecode(np.frombuffer(data, dtype=np.uint8), cv2.IMREAD_UNCHANGED)
-    else:
-        raise ValueError(f"Unsupported image encoding: {encoding}")
+        if encoding == "mono8":
+            img_np = np.frombuffer(data, dtype=np.uint8).reshape((height, width))
+        elif encoding == "mono16":
+            img_np = np.frombuffer(data, dtype=np.uint16).reshape((height, width)) 
+        elif encoding == "bgr8":
+            img_np = np.frombuffer(data, dtype=np.uint8).reshape((height, width, 3))
+        elif encoding == "jpeg" or "png":
+            img_np = cv2.imdecode(np.frombuffer(data, dtype=np.uint8), cv2.IMREAD_UNCHANGED)
+        else:
+            raise ValueError(f"Unsupported image encoding: {encoding}")
 
-    return img_np
+        return img_np
 
 def save_camera_frames(args):
     """
@@ -54,42 +60,46 @@ def save_camera_frames(args):
     img_out = args.img_outdir
     frame_count = int(args.frame_count)
 
-    left_img_path = os.path.join(img_out, "/image_2/")
-    right_img_path = os.path.join(img_out, "/image_3/")
+    print(img_out)
+
+    left_img_path = os.path.join(img_out, "image_2")
+    right_img_path = os.path.join(img_out, "image_3")
+
+    if not os.path.exists(left_img_path):
+        os.mkdir(left_img_path)
+    
+    elif not os.path.exists(right_img_path):
+        os.mkdir(right_img_path)
 
     left_img_topic = "S1/stereo1_l"
     right_img_topic = "S1/stereo2_r"
 
     with open(mcap_path, "rb") as file:
         reader = make_reader(file)
-        messages = list(reader.iter_messages())
 
-        print(messages)
+        left_img_iter = reader.iter_messages(topics=["S1/stereo1_l"])
+        right_img_iter = reader.iter_messages(topics=["S1/stereo2_r"])
 
-        left_img_msgs = [m for m in messages if m.channel.topic == left_img_topic]
-        right_img_msgs = [m for m in messages if m.channel.topic == right_img_topic]
-        
         count = 0
-        i=j=0
+        next_left_msg = next(left_img_iter, None)
+        next_right_msg = next(right_img_iter, None)
 
-        while i < frame_count and j < frame_count:
-            if i < len(left_img_msgs):
-                left_img = decode_image_msg(left_img_msgs[i].data)
-                if left_img != None:
-                    cv2.imwrite(os.path.join(left_img_path, f"left_{count:04d}.png"), left_img)
-                i += 1    
+        while next_left_msg and next_right_msg and count < frame_count:
+            _, _, msgl = next_left_msg
+            _, _, msgr = next_right_msg
 
-            if j < len(right_img_msgs):
-                right_img = decode_image_msg(right_img_msgs[j].data)
-                if right_img != None:
-                    cv2.imwrite(os.path.join(right_img_path, f"right_{count:04d}.png"), right_img)
-                j += 1
-        
+            imgl = decode_image_msg(msgl.data)
+            imgr = decode_image_msg(msgr.data)
+
+            if msgl is not None and msgr is not None:
+                cv2.imwrite(os.path.join(left_img_path, f"left_{count:04d}.png"), imgl)
+                cv2.imwrite(os.path.join(right_img_path, f"right_{count:04d}.png"), imgr)
+                count += 1
+
+            next_left_msg = next(left_img_iter, None)
+            next_right_msg = next(right_img_iter, None)     
+
         print(f"Extracted {count} image pairs to {img_out}")
-
-        
-    
-
 
 def main():
     parser = argparse.ArgumentParser()

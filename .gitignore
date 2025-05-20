@@ -5,5 +5,13 @@
 #output files
 /output_stereo
 
+#mcap image encoder
+/encoder
+
 #ml_models
 /pretrained
+
+sample.py
+
+#capnp dependencies
+/vk_sdk
