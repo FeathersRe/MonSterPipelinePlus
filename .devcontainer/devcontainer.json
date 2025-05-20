@@ -1,6 +1,6 @@
 {
   "name": "MonsterPipeline Env",
-  "image": "FeathersRe/monster-pipeline-env",
+  "image": "monster-pipeline-env",
   "runArgs": ["--shm-size=8g"],
   "context": "..",
   "workspaceFolder": "/workspace",
