@@ -30,6 +30,12 @@ def inspect_mcap(args):
             print(f"Topics: {channel.topic}, Message Encoding: {channel.message_encoding}, Schema ID: {channel.schema_id}")
 
 def decode_image_msg(msg):
+    """
+    Decodes mcap message packets to image data.
+    Uses image_capnp as image decoding schema
+
+    :param msg: message packets extracted from mcap
+    """
     with eCALImage.Image.from_bytes(msg) as img:
         encoding = img.encoding
         width = img.width
@@ -55,6 +61,7 @@ def save_camera_frames(args):
 
     :param args.mcap_path: path of the mcap file
     :param args.img_outdir: output path of the frame images
+    :param 
     """
 
     mcap_path = args.mcap_path
@@ -86,25 +93,23 @@ def save_camera_frames(args):
         next_left_msg = next(left_img_iter, None)
         next_right_msg = next(right_img_iter, None)
 
-        start_time_ns = None
+        cutoff_time_l_ns=cutoff_time_r_ns=None
 
         #Infinite loop: Time precision incorrect
         while next_left_msg and next_right_msg and count < frame_count:
             _, _, msgl = next_left_msg
             _, _, msgr = next_right_msg
             
-            if start_time_ns == None:
-                start_time_ns = msgl.log_time
-                print(start_time_ns)
-                cutoff_time_ns = start_time_ns + int(start_offset_sec * 1e9)
-                print(cutoff_time_ns)
+            if cutoff_time_l_ns == None or cutoff_time_r_ns == None:
+                cutoff_time_l_ns = msgl.log_time + int(start_offset_sec * 1e9)
+                cutoff_time_r_ns = msgr.log_time + int(start_offset_sec * 1e9)
                 time_step_ns = int(time_step_sec * 1e9)
 
-            if msgl.log_time < cutoff_time_ns or msgr.log_time < cutoff_time_ns:
-                if msgl.log_time < cutoff_time_ns:
+            if msgl.log_time < cutoff_time_l_ns or msgr.log_time < cutoff_time_r_ns:
+                if msgl.log_time < cutoff_time_l_ns:
                     next_left_msg = next(left_img_iter, None)
 
-                if msgr.log_time < cutoff_time_ns:
+                if msgr.log_time < cutoff_time_r_ns:
                     next_right_msg = next(right_img_iter, None)
                 
                 continue
