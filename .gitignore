@@ -8,10 +8,17 @@
 #mcap image encoder
 /encoder
 
-#ml_models
+#pretrained ml models
 /pretrained
-
-sample.py
 
 #capnp dependencies
 /vk_sdk
+
+#monster core
+/core
+
+#depth anything core
+/Depth-Anything-V2-list3
+
+#Pycache
+/__pycache__
