@@ -79,14 +79,11 @@ def save_camera_frames(args):
     elif not os.path.exists(right_img_path):
         os.mkdir(right_img_path)
 
-    left_img_topic = "S1/stereo1_l"
-    right_img_topic = "S1/stereo2_r"
-
     with open(mcap_path, "rb") as file:
         reader = make_reader(file)
 
-        left_img_iter = reader.iter_messages(topics=["S1/stereo1_l"])
-        right_img_iter = reader.iter_messages(topics=["S1/stereo2_r"])
+        left_img_iter = reader.iter_messages(topics=["S0/camb"])
+        right_img_iter = reader.iter_messages(topics=["S0/camc"])
 
         count = 0
         last_captured_time = 0
@@ -135,7 +132,7 @@ def main():
     parser.add_argument("--img_outdir", help="output directory of bag image", default="./input_imgs/")
     parser.add_argument("--time_offset", help="duration offset (in secs) from start to capture frames from", default=0)
     parser.add_argument("--time_step", help="time step (in s) between the bag frames captured", default=1)
-    parser.add_argument("--frame_count", help="number of frames of bag to capture", default=5)
+    parser.add_argument("--frame_count", help="number of frames of bag to capture", default=30)
 
     args = parser.parse_args()
 

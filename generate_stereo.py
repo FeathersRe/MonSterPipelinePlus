@@ -95,6 +95,8 @@ def generate_stereo(args):
             file_stem = os.path.join(output_directory, imfile1.split('/')[-1]).replace('.png', '')
             disp = disp.cpu().numpy().squeeze()
             disp_np = (2.0*disp).astype(np.uint8) #Grey colourmap
+            
+            print(disp_np.shape)
 
             disp_np = cv2.applyColorMap(disp_np, cv2.COLORMAP_PLASMA)
             image_np = np.array(Image.open(imfile1)).astype(np.uint8)       
