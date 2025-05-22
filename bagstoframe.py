@@ -12,6 +12,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "./vk_sdk/capnp"))
 sys.path.append('/opt/vilota/messages')
 
 import image_capnp as eCALImage
+import disparity_capnp as eCALDisparity
 
 def inspect_mcap(args):
     """
@@ -82,8 +83,8 @@ def save_camera_frames(args):
     with open(mcap_path, "rb") as file:
         reader = make_reader(file)
 
-        left_img_iter = reader.iter_messages(topics=["S0/camb"])
-        right_img_iter = reader.iter_messages(topics=["S0/camc"])
+        left_img_iter = reader.iter_messages(topics=["S0/stereo2_l"])
+        right_img_iter = reader.iter_messages(topics=["S0/stereo2_r"])
 
         count = 0
         last_captured_time = 0
@@ -126,6 +127,45 @@ def save_camera_frames(args):
 
         print(f"Extracted {count} image pairs to {img_out}")
 
+def decode_disparity_msg(msg):
+    """
+    Decodes mcap msg to obtain disparity data for metric depth
+    Uses disparity_capnp as decoding schema.
+    """
+    with eCALDisparity.Disparity.from_bytes(msg) as dp:
+        fx = dp.fx
+        baseline = dp.baseline
+    
+    return fx, baseline
+    
+
+def save_camera_specs(args):
+    """
+    Function to obtain the focal length and baseline for metric depth
+    """
+    mcap_path = args.mcap_path
+
+    with open(mcap_path, "rb") as file:
+        reader = make_reader(file)
+        
+        stereo1_msg_iter = reader.iter_messages(topics=["S0/stereo1_l/disparity"])
+        stereo2_msg_iter = reader.iter_messages(topics=["S0/stereo2_r/disparity"])
+
+        stereo1_msg = next(stereo1_msg_iter, None)
+        stereo2_msg = next(stereo2_msg_iter, None)
+
+        if stereo1_msg and stereo2_msg:
+            _,_,msg1 = stereo1_msg
+            _,_,msg2 = stereo2_msg
+
+            fx1, baseline1 = decode_disparity_msg(msg1.data)
+            fx2, baseline2 = decode_disparity_msg(msg2.data)
+        
+        print("Focal length: ", fx1)
+        print("Baseline 1: ", baseline1)
+
+    return fx1, baseline1, fx2, baseline2
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--mcap_path", help="path of mcap file", default="./input_bags/")
@@ -138,6 +178,7 @@ def main():
 
     inspect_mcap(args)
     save_camera_frames(args)
+    fx1, baseline1, fx2, baseline2 = save_camera_specs(args)
 
 if __name__ == "__main__":
     main()
