@@ -16,7 +16,7 @@ import sys
 import time
 
 from pathlib import Path
-from bagstoframe import inspect_mcap, save_camera_frames
+from bagstoframe import inspect_mcap, save_camera_frames, save_camera_specs
 
 DEVICE = 'cpu'
 
@@ -48,7 +48,7 @@ def load_image(imfile):
     img = torch.from_numpy(img).permute(2, 0, 1).float()
     return img[None].to(DEVICE)
 
-def generate_stereo(args):
+def generate_stereo(args, fx, baseline):
     model = torch.nn.DataParallel(Monster(args), device_ids=[0])
 
     checkpoint = torch.load(args.restore_ckpt, map_location=torch.device("cpu"))
@@ -98,14 +98,19 @@ def generate_stereo(args):
             
             print(disp_np.shape)
 
-            disp_np = cv2.applyColorMap(disp_np, cv2.COLORMAP_PLASMA)
-            image_np = np.array(Image.open(imfile1)).astype(np.uint8)       
-            out_img = np.concatenate((image_np, disp_np), 0)
-            
+            colour_disp_np = cv2.applyColorMap(disp_np, cv2.COLORMAP_PLASMA)
             left_name = Path(imfile1).stem  # e.g., '000001'
             disp_img_name = f"{left_name}_disp.png"
             disp_img_path = output_directory / disp_img_name
-            cv2.imwrite(str(disp_img_path), disp_np)
+            cv2.imwrite(str(disp_img_path), colour_disp_np)
+
+            #Package into seperate script to avoid model computation
+            #disp_np = cv2.imread('disparity.png', cv2.IMREAD_UNCHANGED).astype(np.float32)
+            disp_np[disp_np == 0.0] = 0.1 #Mask all 0 portions to 0.1 to avoid division by 0
+            depth_np = (2 * fx * baseline) / disp_np
+            depth_np_name = f"{left_name}_depth.npy"
+            depth_np_path = output_directory / depth_np_name
+            np.save(depth_np_path, depth_np)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -120,6 +125,8 @@ def main():
     parser.add_argument('--mixed_precision', action='store_true', help='use mixed precision')
     parser.add_argument('--valid_iters', type=int, default=16, help='number of flow-field updates during forward pass')
     parser.add_argument('--encoder', type=str, default='vitl', choices=['vits', 'vitb', 'vitl', 'vitg'])
+
+    parser.add_argument('--stereo_unit', help="Defines the stereo unit that is used for original image", default = 1)
 
     # Architecture choices
     parser.add_argument('--hidden_dims', nargs='+', type=int, default=[128]*3, help="hidden state and context dimensions")
@@ -142,7 +149,11 @@ def main():
     args= parser.parse_args()
     inspect_mcap(args)
     save_camera_frames(args)
-    generate_stereo(args)
+    fx1, baseline1, fx2, baseline2 = save_camera_specs(args)
+    if args.stereo_unit == 1:
+        generate_stereo(args, fx1, baseline1)
+    else:
+        generate_stereo(args, fx2, baseline2)
 
 if __name__ == "__main__":
     main()
