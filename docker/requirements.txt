@@ -3,7 +3,9 @@ mcap
 tqdm
 numpy
 scipy
+plotly
 pycapnp
+streamlit
 matplotlib
 scikit-image
 opencv_python

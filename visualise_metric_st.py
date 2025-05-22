@@ -5,7 +5,7 @@ import os
 import plotly.graph_objects as go
 
 def visualise_depth_map(dp_path):
-    st.title ("Depth Map Viewer with Hover Info")
+    st.title ("Depth Map Viewer")
 
     depth_files = [f for f in os.listdir(dp_path) if f.endswith(".npy")]
 
