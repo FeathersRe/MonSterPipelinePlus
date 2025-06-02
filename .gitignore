@@ -22,9 +22,3 @@
 
 #Pycache
 /__pycache__
-
-#Recording script
-auto_record.py
-
-#Test Backups
-/test_cases
