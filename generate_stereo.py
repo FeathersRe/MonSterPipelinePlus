@@ -96,7 +96,7 @@ def generate_stereo(args, fx, baseline):
             disp = disp.cpu().numpy().squeeze()
             disp_np = (2.0*disp).astype(np.uint8) #Grey colourmap
             
-            print(disp_np.shape)
+            #print(disp_np.shape)
 
             colour_disp_np = cv2.applyColorMap(disp_np, cv2.COLORMAP_PLASMA)
             left_name = Path(imfile1).stem  # e.g., '000001'
@@ -104,13 +104,15 @@ def generate_stereo(args, fx, baseline):
             disp_img_path = output_directory / disp_img_name
             cv2.imwrite(str(disp_img_path), colour_disp_np)
 
-            #Package into seperate script to avoid model computation
-            #disp_np = cv2.imread('disparity.png', cv2.IMREAD_UNCHANGED).astype(np.float32)
-            disp_np[disp_np == 0.0] = 0.1 #Mask all 0 portions to 0.1 to avoid division by 0
-            depth_np = (2 * fx * baseline) / disp_np
-            depth_np_name = f"{left_name}_depth.npy"
-            depth_np_path = output_directory / depth_np_name
-            np.save(depth_np_path, depth_np)
+            if args.save_numpy:
+                #disp_np = cv2.imread('disparity.png', cv2.IMREAD_UNCHANGED).astype(np.float32)
+                disp_np = disp_np * 0.5
+                disp_np -= 1 #Pixel shift for view correction
+                disp_np[disp_np <= 0.0] = 0.1 #Mask all 0 portions to 0.1 to avoid division by 0
+                depth_np = (fx * baseline) / disp_np
+                depth_np_name = f"{left_name}_depth.npy"
+                depth_np_path = output_directory / depth_np_name
+                np.save(depth_np_path, depth_np)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -125,8 +127,6 @@ def main():
     parser.add_argument('--mixed_precision', action='store_true', help='use mixed precision')
     parser.add_argument('--valid_iters', type=int, default=16, help='number of flow-field updates during forward pass')
     parser.add_argument('--encoder', type=str, default='vitl', choices=['vits', 'vitb', 'vitl', 'vitg'])
-
-    parser.add_argument('--stereo_unit', help="Defines the stereo unit that is used for original image", default = 1)
 
     # Architecture choices
     parser.add_argument('--hidden_dims', nargs='+', type=int, default=[128]*3, help="hidden state and context dimensions")
@@ -145,15 +145,13 @@ def main():
     parser.add_argument("--time_offset", help="duration offset (in secs) from start to capture frames from", default=0)
     parser.add_argument("--time_step", help="time step (in s) between the bag frames captured", default=1)
     parser.add_argument("--frame_count", help="number of frames of bag to capture", default=5)
+    parser.add_argument("--stereo_2", help="Choose the second set of stereo as reference (default first)", action="store_true")
 
     args= parser.parse_args()
     inspect_mcap(args)
     save_camera_frames(args)
-    fx1, baseline1, fx2, baseline2 = save_camera_specs(args)
-    if args.stereo_unit == 1:
-        generate_stereo(args, fx1, baseline1)
-    else:
-        generate_stereo(args, fx2, baseline2)
+    fx,baseline = save_camera_specs(args)
+    generate_stereo(args, fx, baseline)
 
 if __name__ == "__main__":
     main()
