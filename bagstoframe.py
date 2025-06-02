@@ -77,14 +77,21 @@ def save_camera_frames(args):
     if not os.path.exists(left_img_path):
         os.mkdir(left_img_path)
     
-    elif not os.path.exists(right_img_path):
+    if not os.path.exists(right_img_path):
         os.mkdir(right_img_path)
+
+    if not os.path.exists(img_out):
+        os.mkdir(img_out)
 
     with open(mcap_path, "rb") as file:
         reader = make_reader(file)
+        
+        left_img_iter = reader.iter_messages(topics=["S0/stereo1_l"])
+        right_img_iter = reader.iter_messages(topics=["S0/stereo1_r"])
 
-        left_img_iter = reader.iter_messages(topics=["S0/stereo2_l"])
-        right_img_iter = reader.iter_messages(topics=["S0/stereo2_r"])
+        if args.stereo_2:
+            left_img_iter = reader.iter_messages(topics=["S0/stereo2_l"])
+            right_img_iter = reader.iter_messages(topics=["S0/stereo2_r"])
 
         count = 0
         last_captured_time = 0
@@ -92,12 +99,10 @@ def save_camera_frames(args):
         next_right_msg = next(right_img_iter, None)
 
         cutoff_time_l_ns=cutoff_time_r_ns=None
-
-        #Infinite loop: Time precision incorrect
         while next_left_msg and next_right_msg and count < frame_count:
             _, _, msgl = next_left_msg
             _, _, msgr = next_right_msg
-            
+
             if cutoff_time_l_ns == None or cutoff_time_r_ns == None:
                 cutoff_time_l_ns = msgl.log_time + int(start_offset_sec * 1e9)
                 cutoff_time_r_ns = msgr.log_time + int(start_offset_sec * 1e9)
@@ -148,23 +153,35 @@ def save_camera_specs(args):
     with open(mcap_path, "rb") as file:
         reader = make_reader(file)
         
-        stereo1_msg_iter = reader.iter_messages(topics=["S0/stereo1_l/disparity"])
-        stereo2_msg_iter = reader.iter_messages(topics=["S0/stereo2_r/disparity"])
+        if args.stereo_2:
+            stereo2_msg_iter = reader.iter_messages(topics=["S0/stereo2_r/disparity"])
+            stereo2_msg = next(stereo2_msg_iter, None)
 
-        stereo1_msg = next(stereo1_msg_iter, None)
-        stereo2_msg = next(stereo2_msg_iter, None)
+            if stereo2_msg:
+                _,_,msg2 = stereo2_msg
 
-        if stereo1_msg and stereo2_msg:
-            _,_,msg1 = stereo1_msg
-            _,_,msg2 = stereo2_msg
+                fx2, baseline2 = decode_disparity_msg(msg2.data)
 
-            fx1, baseline1 = decode_disparity_msg(msg1.data)
-            fx2, baseline2 = decode_disparity_msg(msg2.data)
-        
-        print("Focal length: ", fx1)
-        print("Baseline 1: ", baseline1)
+                print("Focal length 2: ", fx2)
+                print("Baseline 2: ", baseline2)
 
-    return fx1, baseline1, fx2, baseline2
+                return fx2, baseline2
+
+        else:
+            stereo1_msg_iter = reader.iter_messages(topics=["S0/stereo1_l/disparity"])
+            stereo1_msg = next(stereo1_msg_iter, None)
+
+            if stereo1_msg:
+                _,_,msg1 = stereo1_msg
+
+                fx1, baseline1 = decode_disparity_msg(msg1.data)
+
+                print("Focal length 1: ", fx1)
+                print("Baseline 1: ", baseline1)
+
+                return fx1, baseline1
+    
+    return Exception
 
 def main():
     parser = argparse.ArgumentParser()
@@ -173,12 +190,13 @@ def main():
     parser.add_argument("--time_offset", help="duration offset (in secs) from start to capture frames from", default=0)
     parser.add_argument("--time_step", help="time step (in s) between the bag frames captured", default=1)
     parser.add_argument("--frame_count", help="number of frames of bag to capture", default=30)
+    parser.add_argument("--stereo_2", help="Choose the second set of stereo as reference (default first)", action="store_true")
 
     args = parser.parse_args()
 
     inspect_mcap(args)
     save_camera_frames(args)
-    fx1, baseline1, fx2, baseline2 = save_camera_specs(args)
+    fx, baseline = save_camera_specs(args)
 
 if __name__ == "__main__":
     main()
