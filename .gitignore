@@ -5,20 +5,8 @@
 #output files
 /output_stereo
 
-#mcap image encoder
-/encoder
-
 #pretrained ml models
 /pretrained
-
-#capnp dependencies
-/vk_sdk
-
-#monster core
-/core
-
-#depth anything core
-/Depth-Anything-V2-list3
 
 #Pycache
 /__pycache__
