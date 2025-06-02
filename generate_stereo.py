@@ -94,6 +94,8 @@ def generate_stereo(args, fx, baseline):
             disp = padder.unpad(disp)
             file_stem = os.path.join(output_directory, imfile1.split('/')[-1]).replace('.png', '')
             disp = disp.cpu().numpy().squeeze()
+
+            #Original code multipled the true disparity by 2 to highlight differences
             disp_np = (2.0*disp).astype(np.uint8) #Grey colourmap
             
             #print(disp_np.shape)
@@ -106,7 +108,7 @@ def generate_stereo(args, fx, baseline):
 
             if args.save_numpy:
                 #disp_np = cv2.imread('disparity.png', cv2.IMREAD_UNCHANGED).astype(np.float32)
-                disp_np = disp_np * 0.5
+                disp_np = disp_np * 0.5 #Downscale the disparity by 2 to obtain the real disparity
                 disp_np -= 1 #Pixel shift for view correction
                 disp_np[disp_np <= 0.0] = 0.1 #Mask all 0 portions to 0.1 to avoid division by 0
                 depth_np = (fx * baseline) / disp_np
