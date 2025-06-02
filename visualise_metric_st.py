@@ -15,6 +15,8 @@ def visualise_depth_map(dp_path):
 
     fig = go.Figure(data=go.Heatmap(
         z=depth_np,
+        zmin=0,
+        zmax=6,
         colorscale='plasma',
         colorbar=dict(title="Depth"),
         hovertemplate='X: %{x}<br>Y: %{y}<br>Depth: %{z:.2f}<extra></extra>'
