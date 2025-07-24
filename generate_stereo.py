@@ -78,6 +78,7 @@ def generate_stereo(args, fx, baseline):
     with torch.no_grad():
         left_images = sorted(glob.glob(args.left_imgs, recursive=True))[:200]
         right_images = sorted(glob.glob(args.right_imgs, recursive=True))[:200]
+
         print (f"Found {len(left_images)} images. Saving files to {output_directory}/")
 
         for (imfile1, imfile2) in tqdm(list(zip(left_images, right_images))):
@@ -122,15 +123,15 @@ def main():
 
     parser.add_argument('--save_numpy', action='store_true', help='save output as numpy arrays')
 
-    parser.add_argument('-l', '--left_imgs', help="path to all first (left) frames", default="./input_imgs/image_2/*.png")
-    parser.add_argument('-r', '--right_imgs', help="path to all second (right) frames", default="./input_imgs/image_3/*.png")
+    parser.add_argument('-l', '--left_imgs', help="path to all first (left) frames", default="./input_imgs/6th_frames/image_2/*.png")
+    parser.add_argument('-r', '--right_imgs', help="path to all second (right) frames", default="./input_imgs/6th_frames/image_3/*.png")
 
     parser.add_argument('--output_directory', help="directory to save stereo output", default="./output_stereo")
     parser.add_argument('--mixed_precision', action='store_true', help='use mixed precision')
     parser.add_argument('--valid_iters', type=int, default=16, help='number of flow-field updates during forward pass')
     parser.add_argument('--encoder', type=str, default='vitl', choices=['vits', 'vitb', 'vitl', 'vitg'])
 
-    # Architecture choices
+    # Architecture choices1
     parser.add_argument('--hidden_dims', nargs='+', type=int, default=[128]*3, help="hidden state and context dimensions")
     parser.add_argument('--corr_implementation', choices=["reg", "alt", "reg_cuda", "alt_cuda"], default="reg", help="correlation volume implementation")
     parser.add_argument('--shared_backbone', action='store_true', help="use a single backbone for the context and feature encoders")
@@ -142,6 +143,8 @@ def main():
     parser.add_argument('--max_disp', type=int, default=192, help="max disp of geometry encoding volume")
 
     # Bags to frame settings
+    parser.add_argument("--no_bag", help="directly run monster with available frames", action="store_true")
+
     parser.add_argument("--mcap_path", help="path of mcap file", default="./input_bags/")
     parser.add_argument("--img_outdir", help="output directory of bag image", default="./input_imgs/")
     parser.add_argument("--time_offset", help="duration offset (in secs) from start to capture frames from", default=0)
@@ -150,9 +153,12 @@ def main():
     parser.add_argument("--stereo_2", help="Choose the second set of stereo as reference (default first)", action="store_true")
 
     args= parser.parse_args()
-    inspect_mcap(args)
-    save_camera_frames(args)
-    fx,baseline = save_camera_specs(args)
+    if not args.no_bag:
+        inspect_mcap(args)
+        save_camera_frames(args)
+        fx,baseline = save_camera_specs(args)
+    else:
+        fx,baseline = 400, 0.08 #default settings        
     generate_stereo(args, fx, baseline)
 
 if __name__ == "__main__":
