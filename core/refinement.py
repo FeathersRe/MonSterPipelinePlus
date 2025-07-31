@@ -10,7 +10,7 @@ def conv2d(in_channels, out_channels, kernel_size=3, stride=1, dilation=1, group
                                    stride=stride, padding=dilation, dilation=dilation,
                                    bias=False, groups=groups),
                          nn.BatchNorm2d(out_channels),
-                         nn.LeakyReLU(0.2, inplace=True))
+                         nn.LeakyReLU(0.2, inplace=False))
 
 
 class Conv2x_now(nn.Module):
@@ -43,7 +43,6 @@ class Conv2x_now(nn.Module):
         x = self.conv1(x)
         # print('x.size()', x.size())
         # print('rem.size()', rem.size())
-        assert (x.size() == rem.size())
 
         if self.concat:
             x = torch.cat((x, rem), 1)
@@ -76,7 +75,7 @@ class BasicConv_now(nn.Module):
         if self.use_bn:
             x = self.bn(x)
         if self.relu:
-            x = F.relu(x, inplace=True)
+            x = F.relu(x, inplace=False)
         return x
 
 class FeatureAtt(nn.Module):
@@ -381,14 +380,14 @@ class REMP(nn.Module):
         self.AP = nn.AdaptiveAvgPool2d(1)
         self.LFE = nn.Sequential(
             nn.Conv2d(channel, channel * 2, 1, padding=0, bias=True),
-            nn.ReLU(inplace=True),
+            nn.ReLU(inplace=False),
             nn.Conv2d(channel * 2, channel, 1, padding=0, bias=True),
             nn.Sigmoid()
         )
         self.LMC = nn.Sequential(
             default_conv(channel, channel, 3),
             default_conv(channel, channel * 2, 3),
-            nn.ReLU(inplace=True),
+            nn.ReLU(inplace=False),
             default_conv(channel * 2, channel, 3),
             nn.Sigmoid()
         )
@@ -396,9 +395,6 @@ class REMP(nn.Module):
         self.final_conv = nn.Conv2d(32, 1, 3, 1, 1)
 
     def forward(self, disp_mono, disp_stereo, left_img, right_img):
-
-        assert disp_mono.dim() == 4
-        assert disp_stereo.dim() == 4
 
         warped_right_mono = disp_warp(right_img, disp_mono)[0]  # [B, 3, H, W]
         flaw_mono = warped_right_mono - left_img  # [B, 3, H, W]
@@ -542,7 +538,7 @@ class fusion_mono(nn.Module):
         self.RefinementBlock = Simple_UNet_8x(in_channels=channel)  # , in_channels
         self.final_conv = nn.Sequential(
             nn.Conv2d(channel, 1, 3, 1, 1),
-            nn.ReLU(inplace=True)
+            nn.ReLU(inplace=False)
         )
 
     def forward(self, disp_stereo, disp_mono, feat_mix):

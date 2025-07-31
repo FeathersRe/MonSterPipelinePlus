@@ -76,7 +76,8 @@ class StereoDataset(data.Dataset):
 
         disp = np.array(disp).astype(np.float32)
 
-        flow = np.stack([disp, np.zeros_like(disp)], axis=-1)
+        zero = torch.zeros(disp.shape, device=disp.device, dtype=disp.dtype)
+        flow = torch.stack([disp, zero], dim=-1)
 
         # grayscale images
         if len(img1.shape) == 2:
@@ -127,7 +128,6 @@ class StereoDataset(data.Dataset):
 class SceneFlowDatasets(StereoDataset):
     def __init__(self, aug_params=None, root='/data2/cjd/StereoDatasets/sceneflow', dstype='frames_finalpass', things_test=False):
         super(SceneFlowDatasets, self).__init__(aug_params)
-        assert os.path.exists(root)
         self.root = root
         self.dstype = dstype
 
@@ -191,7 +191,6 @@ class SceneFlowDatasets(StereoDataset):
 class ETH3D(StereoDataset):
     def __init__(self, aug_params=None, root='/data2/cjd/StereoDatasets/eth3d', split='training'):
         super(ETH3D, self).__init__(aug_params, sparse=True)
-        assert os.path.exists(root)
 
         image1_list = sorted( glob(osp.join(root, f'two_view_{split}/*/im0.png')) )
         image2_list = sorted( glob(osp.join(root, f'two_view_{split}/*/im1.png')) )
@@ -210,14 +209,12 @@ class SintelStereo(StereoDataset):
         disp_list = sorted( glob(osp.join(root, 'training/disparities/*/frame_*.png')) ) * 2
 
         for img1, img2, disp in zip(image1_list, image2_list, disp_list):
-            assert img1.split('/')[-2:] == disp.split('/')[-2:]
             self.image_list += [ [img1, img2] ]
             self.disparity_list += [ disp ]
 
 class FallingThings(StereoDataset):
     def __init__(self, aug_params=None, root='/data2/cjd/data_wxq/fallingthings'):
         super().__init__(aug_params, reader=frame_utils.readDispFallingThings)
-        assert os.path.exists(root)
 
         image1_list = sorted(glob(root + '/*/*/*left.jpg'))
         image2_list = sorted(glob(root + '/*/*/*right.jpg'))
@@ -227,8 +224,6 @@ class FallingThings(StereoDataset):
         image2_list += sorted(glob(root + '/*/*/*/*right.jpg'))
         disp_list += sorted(glob(root + '/*/*/*/*left.depth.png'))
 
-        assert len(image1_list) == len(image2_list) == len(disp_list)
-
         for img1, img2, disp in zip(image1_list, image2_list, disp_list):
             self.image_list += [ [img1, img2] ]
             self.disparity_list += [ disp ]
@@ -236,8 +231,6 @@ class FallingThings(StereoDataset):
 class TartanAir(StereoDataset):
     def __init__(self, aug_params=None, root='datasets', keywords=[]):
         super().__init__(aug_params, reader=frame_utils.readDispTartanAir)
-        assert os.path.exists(root)
-
         with open(os.path.join(root, 'tartanair_filenames.txt'), 'r') as f:
             filenames = sorted(list(filter(lambda s: 'seasonsforest_winter/Easy' not in s, f.read().splitlines())))
             for kw in keywords:
@@ -254,7 +247,6 @@ class TartanAir(StereoDataset):
 class KITTI(StereoDataset):
     def __init__(self, aug_params=None, root='/data2/cjd/StereoDatasets/kitti/2015/', image_set='training'):
         super(KITTI, self).__init__(aug_params, sparse=True, reader=frame_utils.readDispKITTI)
-        assert os.path.exists(root)
 
         root_12 = '/data2/cjd/StereoDatasets/kitti/2012/'
         image1_list = sorted(glob(os.path.join(root_12, image_set, 'colored_0/*_10.png')))
@@ -274,13 +266,10 @@ class KITTI(StereoDataset):
 class VKITTI2(StereoDataset):
     def __init__(self, aug_params=None, root='/data/cjd/stereo_dataset/vkitti2/'):
         super(VKITTI2, self).__init__(aug_params, sparse=True, reader=frame_utils.readDispVKITTI2)
-        assert os.path.exists(root)
 
         image1_list = sorted(glob(os.path.join(root, 'Scene*/*/frames/rgb/Camera_0/rgb*.jpg')))
         image2_list = sorted(glob(os.path.join(root, 'Scene*/*/frames/rgb/Camera_1/rgb*.jpg')))
         disp_list = sorted(glob(os.path.join(root, 'Scene*/*/frames/depth/Camera_0/depth*.png')))
-
-        assert len(image1_list) == len(image2_list) == len(disp_list)
 
         for idx, (img1, img2, disp) in enumerate(zip(image1_list, image2_list, disp_list)):
             self.image_list += [ [img1, img2] ]
@@ -289,8 +278,7 @@ class VKITTI2(StereoDataset):
 class Middlebury(StereoDataset):
     def __init__(self, aug_params=None, root='/data2/cjd/StereoDatasets/middlebury', split='2014', resolution='F'):
         super(Middlebury, self).__init__(aug_params, sparse=True, reader=frame_utils.readDispMiddlebury)
-        assert os.path.exists(root)
-        assert split in ["2005", "2006", "2014", "2021", "MiddEval3"]
+
         if split == "2005":
             scenes = list((Path(root) / "2005").glob("*"))
             for scene in scenes:
@@ -328,7 +316,7 @@ class Middlebury(StereoDataset):
             image1_list = sorted(glob(os.path.join(root, "MiddEval3", f'training{resolution}', '*/im0.png')))
             image2_list = sorted(glob(os.path.join(root, "MiddEval3", f'training{resolution}', '*/im1.png')))
             disp_list = sorted(glob(os.path.join(root, "MiddEval3", f'training{resolution}', '*/disp0GT.pfm')))
-            assert len(image1_list) == len(image2_list) == len(disp_list) > 0, [image1_list, split]
+
             for img1, img2, disp in zip(image1_list, image2_list, disp_list):
                 self.image_list += [ [img1, img2] ]
                 self.disparity_list += [ disp ]
@@ -336,13 +324,11 @@ class Middlebury(StereoDataset):
 class CREStereoDataset(StereoDataset):
     def __init__(self, aug_params=None, root='/data2/cjd/StereoDatasets/crestereo'):
         super(CREStereoDataset, self).__init__(aug_params, reader=frame_utils.readDispCREStereo)
-        assert os.path.exists(root)
+
 
         image1_list = sorted(glob(os.path.join(root, '*/*_left.jpg')))
         image2_list = sorted(glob(os.path.join(root, '*/*_right.jpg')))
         disp_list = sorted(glob(os.path.join(root, '*/*_left.disp.png')))
-
-        assert len(image1_list) == len(image2_list) == len(disp_list)
 
         for idx, (img1, img2, disp) in enumerate(zip(image1_list, image2_list, disp_list)):
             self.image_list += [ [img1, img2] ]
@@ -351,13 +337,10 @@ class CREStereoDataset(StereoDataset):
 class InStereo2K(StereoDataset):
     def __init__(self, aug_params=None, root='/data2/cjd/data_wxq/instereo2k'):
         super(InStereo2K, self).__init__(aug_params, sparse=True, reader=frame_utils.readDispInStereo2K)
-        assert os.path.exists(root)
 
         image1_list = sorted(glob(root + '/train/*/*/left.png') + glob(root + '/test/*/left.png'))
         image2_list = sorted(glob(root + '/train/*/*/right.png') + glob(root + '/test/*/right.png'))
         disp_list = sorted(glob(root + '/train/*/*/left_disp.png') + glob(root + '/test/*/left_disp.png'))
-
-        assert len(image1_list) == len(image2_list) == len(disp_list)
 
         for idx, (img1, img2, disp) in enumerate(zip(image1_list, image2_list, disp_list)):
             self.image_list += [ [img1, img2] ]
@@ -366,13 +349,10 @@ class InStereo2K(StereoDataset):
 class CARLA(StereoDataset):
     def __init__(self, aug_params=None, root='/data2/cjd/StereoDatasets/carla-highres'):
         super(CARLA, self).__init__(aug_params)
-        assert os.path.exists(root)
 
         image1_list = sorted(glob(root + '/trainingF/*/im0.png'))
         image2_list = sorted(glob(root + '/trainingF/*/im1.png'))
         disp_list = sorted(glob(root + '/trainingF/*/disp0GT.pfm'))
-
-        assert len(image1_list) == len(image2_list) == len(disp_list)
 
         for idx, (img1, img2, disp) in enumerate(zip(image1_list, image2_list, disp_list)):
             self.image_list += [ [img1, img2] ]
@@ -382,7 +362,6 @@ class DrivingStereo(StereoDataset):
     def __init__(self, aug_params=None, root='/data2/cjd/StereoDatasets/drivingstereo/', image_set='rainy'):
         reader = frame_utils.readDispDrivingStereo_half
         super().__init__(aug_params, sparse=True, reader=reader)
-        assert os.path.exists(root)
         image1_list = sorted(glob(os.path.join(root, image_set, 'left-image-half-size/*.jpg')))
         image2_list = sorted(glob(os.path.join(root, image_set, 'right-image-half-size/*.jpg')))
         disp_list = sorted(glob(os.path.join(root, image_set, 'disparity-map-half-size/*.png')))
@@ -493,7 +472,6 @@ if __name__ == '__main__':
 
     def gray_2_colormap_np(img, cmap='rainbow', max=None):
         img = img.cpu().detach().numpy().squeeze()
-        assert img.ndim == 2
         img[img < 0] = 0
         mask_invalid = img < 1e-10
         if max == None:

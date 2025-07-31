@@ -206,7 +206,6 @@ class NestedTensorBlock(Block):
         """
         x_list contains a list of tensors to nest together and run
         """
-        assert isinstance(self.attn, MemEffAttention)
 
         if self.training and self.sample_drop_ratio > 0.0:
 
@@ -246,7 +245,6 @@ class NestedTensorBlock(Block):
         if isinstance(x_or_x_list, Tensor):
             return super().forward(x_or_x_list)
         elif isinstance(x_or_x_list, list):
-            assert XFORMERS_AVAILABLE, "Please install xFormers for nested tensors usage"
             return self.forward_nested(x_or_x_list)
         else:
             raise AssertionError

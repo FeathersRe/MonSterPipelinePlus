@@ -13,7 +13,7 @@ class ResidualBlock(nn.Module):
   
         self.conv1 = nn.Conv2d(in_planes, planes, kernel_size=3, padding=1, stride=stride)
         self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, padding=1)
-        self.relu = nn.ReLU(inplace=True)
+        self.relu = nn.ReLU(inplace=False)
 
         num_groups = planes // 8
 
@@ -72,7 +72,7 @@ class BottleneckBlock(nn.Module):
         self.conv1 = nn.Conv2d(in_planes, planes//4, kernel_size=1, padding=0)
         self.conv2 = nn.Conv2d(planes//4, planes//4, kernel_size=3, padding=1, stride=stride)
         self.conv3 = nn.Conv2d(planes//4, planes, kernel_size=1, padding=0)
-        self.relu = nn.ReLU(inplace=True)
+        self.relu = nn.ReLU(inplace=False)
 
         num_groups = planes // 8
 
@@ -142,7 +142,7 @@ class BasicEncoder(nn.Module):
             self.norm1 = nn.Sequential()
 
         self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=1 + (downsample > 2), padding=3)
-        self.relu1 = nn.ReLU(inplace=True)
+        self.relu1 = nn.ReLU(inplace=False)
 
         self.in_planes = 64
         self.layer1 = self._make_layer(64,  stride=1)
@@ -219,7 +219,7 @@ class MultiBasicEncoder(nn.Module):
             self.norm1 = nn.Sequential()
 
         self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=1 + (downsample > 2), padding=3)
-        self.relu1 = nn.ReLU(inplace=True)
+        self.relu1 = nn.ReLU(inplace=False)
 
         self.in_planes = 64
         self.layer1 = self._make_layer(64, stride=1)

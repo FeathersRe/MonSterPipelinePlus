@@ -16,10 +16,8 @@ import torch.nn as nn
 
 def make_2tuple(x):
     if isinstance(x, tuple):
-        assert len(x) == 2
         return x
-
-    assert isinstance(x, int)
+    
     return (x, x)
 
 
@@ -69,9 +67,6 @@ class PatchEmbed(nn.Module):
     def forward(self, x: Tensor) -> Tensor:
         _, _, H, W = x.shape
         patch_H, patch_W = self.patch_size
-
-        assert H % patch_H == 0, f"Input image height {H} is not a multiple of patch height {patch_H}"
-        assert W % patch_W == 0, f"Input image width {W} is not a multiple of patch width: {patch_W}"
 
         x = self.proj(x)  # B C H W
         H, W = x.size(2), x.size(3)

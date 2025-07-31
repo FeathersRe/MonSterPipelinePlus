@@ -8,7 +8,7 @@ class FlowHead(nn.Module):
         super(FlowHead, self).__init__()
         self.conv1 = nn.Conv2d(input_dim, hidden_dim, 3, padding=1)
         self.conv2 = nn.Conv2d(hidden_dim, output_dim, 3, padding=1)
-        self.relu = nn.ReLU(inplace=True)
+        self.relu = nn.ReLU(inplace=False)
 
     def forward(self, x):
         return self.conv2(self.relu(self.conv1(x)))
@@ -18,7 +18,7 @@ class DispHead(nn.Module):
         super(DispHead, self).__init__()
         self.conv1 = nn.Conv2d(input_dim, hidden_dim, 3, padding=1)
         self.conv2 = nn.Conv2d(hidden_dim, output_dim, 3, padding=1)
-        self.relu = nn.ReLU(inplace=True)
+        self.relu = nn.ReLU(inplace=False)
 
     def forward(self, x):
         return self.conv2(self.relu(self.conv1(x)))
@@ -128,7 +128,7 @@ class BasicMultiUpdateBlock(nn.Module):
 
         self.mask_feat_4 = nn.Sequential(
             nn.Conv2d(hidden_dims[2], 32, 3, padding=1),
-            nn.ReLU(inplace=True))
+            nn.ReLU(inplace=False))
 
     def forward(self, net, inp, corr=None, disp=None, iter04=True, iter08=True, iter16=True, update=True):
 
@@ -168,7 +168,7 @@ class BasicMultiUpdateBlock_mix(nn.Module):
 
         self.mask_feat_4 = nn.Sequential(
             nn.Conv2d(hidden_dims[2], 32, 3, padding=1),
-            nn.ReLU(inplace=True))
+            nn.ReLU(inplace=False))
 
     def forward(self, net, inp, flaw_stereo=None, disp=None, corr=None, flaw_mono=None, disp_mono=None, corr_mono=None, iter04=True, iter08=True, iter16=True, update=True):
 
@@ -252,7 +252,7 @@ class BasicMultiUpdateBlock_2(nn.Module):
 
         self.mask_feat_4 = nn.Sequential(
             nn.Conv2d(hidden_dims[2], 32, 3, padding=1),
-            nn.ReLU(inplace=True))
+            nn.ReLU(inplace=False))
 
     def forward(self, net, inp, flaw_stereo=None, disp=None, corr=None, confidence=None, flaw_mono=None, disp_mono=None, corr_mono=None, iter04=True, iter08=True, iter16=True, update=True):
 
@@ -335,7 +335,7 @@ class BasicMultiUpdateBlock_mono(nn.Module):
 
         self.mask_feat_4 = nn.Sequential(
             nn.Conv2d(hidden_dims[2], 32, 3, padding=1),
-            nn.ReLU(inplace=True))
+            nn.ReLU(inplace=False))
 
     def forward(self, net, inp, corr=None, disp=None, iter04=True, iter08=True, iter16=True, update=True):
 
@@ -398,7 +398,7 @@ class BasicMultiUpdateBlock_mix_conf(nn.Module):
 
         self.mask_feat_4 = nn.Sequential(
             nn.Conv2d(hidden_dims[2], 32, 3, padding=1),
-            nn.ReLU(inplace=True))
+            nn.ReLU(inplace=False))
 
     def forward(self, net, inp, flaw_stereo=None, disp=None, corr=None, flaw_mono=None, disp_mono=None, corr_mono=None, conf_stereo=None, conf_mono=None, iter04=True, iter08=True, iter16=True, update=True):
 
@@ -497,7 +497,7 @@ class BasicMultiUpdateBlock_mix2(nn.Module):
 
         self.mask_feat_4 = nn.Sequential(
             nn.Conv2d(hidden_dims[2], 32, 3, padding=1),
-            nn.ReLU(inplace=True))
+            nn.ReLU(inplace=False))
 
     def forward(self, net, inp, flaw_stereo=None, disp=None, corr=None, flaw_mono=None, disp_mono=None, corr_mono=None, iter04=True, iter08=True, iter16=True, update=True):
 

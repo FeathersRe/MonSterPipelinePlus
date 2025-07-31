@@ -7,10 +7,11 @@ def normalize_coords(grid):
     Args:
         grid: [B, 2, H, W]
     """
-    assert grid.size(1) == 2
     h, w = grid.size()[2:]
-    grid[:, 0, :, :] = 2 * (grid[:, 0, :, :].clone() / (w - 1)) - 1  # x: [-1, 1]
-    grid[:, 1, :, :] = 2 * (grid[:, 1, :, :].clone() / (h - 1)) - 1  # y: [-1, 1]
+    x = 2 * (grid[:, 0, :, :] / (w - 1)) - 1  # shape: [B, H, W]
+    y = 2 * (grid[:, 1, :, :] / (h - 1)) - 1  # shape: [B, H, W]
+
+    grid = torch.stack([x, y], dim=1)  # shape: [B, 2, H, W]
     grid = grid.permute((0, 2, 3, 1))  # [B, H, W, 2]
     return grid
 
@@ -34,7 +35,6 @@ def meshgrid(img, homogeneous=False):
     if homogeneous:
         ones = torch.ones_like(x_range).unsqueeze(0).expand(b, 1, h, w)  # [B, 1, H, W]
         grid = torch.cat((grid, ones), dim=1)  # [B, 3, H, W]
-        assert grid.size(1) == 3
     return grid
 
 def interp(x, sample_grid, padding_mode):
@@ -60,11 +60,17 @@ def disp_warp(img, disp, padding_mode='border'):
         warped_img: [B, 3, H, W]
         valid_mask: [B, 3, H, W]
     """
-    # assert disp.min() >= 0
 
     grid = meshgrid(img)  # [B, 2, H, W] in image scale
     # Note that -disp here
-    offset = torch.cat((-disp, torch.zeros_like(disp)), dim=1)  # [B, 2, H, W]
+    #Rewritten for model conversion
+    B, _, H, W = disp.shape
+    device = disp.device
+    dtype = disp.dtype
+
+    zero_disp = torch.zeros((B, 1, H, W), device=device, dtype=dtype)
+    offset = torch.cat((-disp, zero_disp), dim=1)  #offset = torch.cat((-disp, torch.zeros_like(disp)), dim=1)  # [B, 2, H, W]
+    
     sample_grid = grid + offset
     sample_grid = normalize_coords(sample_grid)  # [B, H, W, 2] in [-1, 1]
     # warped_img = F.grid_sample(img, sample_grid, mode='bilinear', padding_mode=padding_mode)

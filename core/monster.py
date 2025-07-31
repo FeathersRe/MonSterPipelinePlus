@@ -415,10 +415,14 @@ class Monster(nn.Module):
             if itr > int(iters-8):
                 if itr == int(iters-7):
                     bs, _, _, _ = disp.shape
+                    new_disp_mono_4x = []
                     for i in range(bs):
                         with torch.autocast(device_type='cuda', dtype=torch.float32): 
                             scale, shift = compute_scale_shift(disp_mono_4x[i].clone().squeeze(1).to(torch.float32), disp[i].clone().squeeze(1).to(torch.float32))
-                        disp_mono_4x[i] = scale * disp_mono_4x[i] + shift
+                        adjusted = scale * disp_mono_4x[i] + shift
+                        new_disp_mono_4x.append(adjusted)
+                    
+                    disp_mono_4x = torch.stack(new_disp_mono_4x, dim=0)
                 
                 warped_right_mono = disp_warp(features_right[0], disp_mono_4x.clone().to(features_right[0].dtype))[0]  
                 flaw_mono = warped_right_mono - features_left[0] 

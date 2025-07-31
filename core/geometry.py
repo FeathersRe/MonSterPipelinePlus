@@ -40,7 +40,7 @@ class Combined_Geo_Encoding_Volume:
             dx = torch.linspace(-r, r, 2*r+1)
             dx = dx.view(1, 1, 2*r+1, 1).to(disp.device)
             x0 = dx + disp.reshape(b*h*w, 1, 1, 1) / 2**i
-            y0 = torch.zeros_like(x0)
+            y0 = torch.zeros(x0.shape, device=x0.device, dtype=x0.dtype) #y0 = torch.zeros_like(x0)
 
             disp_lvl = torch.cat([x0,y0], dim=-1)
             geo_volume = bilinear_sampler(geo_volume, disp_lvl)
