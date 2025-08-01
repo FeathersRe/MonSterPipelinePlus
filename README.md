@@ -87,3 +87,5 @@ The *model_tracing.py* script traces the MonSter model into the .onnx format. To
 ```
 
 This executes the cloud pipelines and uploads the model to the ai hub to generate inference statistics.
+
+A backup of the artifacts generated (.onnx, .dlc models) can be found in the root folder of the HDD, under /Archives
