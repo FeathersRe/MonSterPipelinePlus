@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  monster:
+    build: ./monster
+    container_name: monster
+    ports:
+      - "8003:8003"
+
+  streamlit:
+    build: ./st_app
+    container_name: st_app
+    ports:
+      - "8502:8502"
+    depends_on:
+      - monster
+
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    ports:
+      - "9000:9000" 
+      - "9001:9001"  
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio-data:/data
+    command: server /data --console-address ":9001"
+
+volumes:
+  minio-data:
