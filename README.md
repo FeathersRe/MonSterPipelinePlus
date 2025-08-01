@@ -69,3 +69,15 @@ To visualise the depth data generated, run
 streamlit run visualise_metric_st.py
 ```
 A streamlit instance will then be launched providing depth data visualisation.
+
+## Streamline Testing (Optional)
+When there is a large amount of consecutive image data for batch running, *auto_process.py* and *auto_run.py* can be utilised for the process.
+
+* sync_and_remove (auto_process.py) takes into account the filtered image pairs in left and does the same filtering for right image pairs
+
+* auto_rename (auto_process.py) synchronise the names of the left and right pair of images (according to their preallocated order)
+
+After preprocessing of the image test cases are complete. Batch run the test cases with
+```Shell
+> python3 auto_run.py
+```
