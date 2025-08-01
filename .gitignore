@@ -10,3 +10,6 @@
 
 #Pycache
 /__pycache__
+
+#Environment Files for st_app
+/st_app/.env
