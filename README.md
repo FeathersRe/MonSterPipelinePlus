@@ -18,60 +18,27 @@ This repository abstracts the base modules for disparity generation from the var
 - [x] Setup minIO server to store image as bucekts
 - [ ] MonSter Backend code to accept images and return estimated depths
 
-## Set-up
-1. Build image with dockerfile and run container
-```Shell
-#Building image file
-docker build -t monster-pipeline-env ./docker/
-```
-> In VSC: With Project Directory Opened: F1 > Dev Containers: Reopen in Container
- 
-2. Load MonSter and Depth AnythingV2 models with pretrained weights
+## Set-up 
+1. Load MonSter and Depth AnythingV2 models with pretrained weights
 ```Shell
 #Recommended directory structure for load
-├── auto_record.py
-├── bagstoframe.py
-├── core #MonSter Core
-├── Depth-Anything-V2-list3 #Depth Anything V2 Core
-├── vk_sdk #vk_sdk from vksystems
-├── docker 
-│   ├── Dockerfile
-│   └── requirements.txt
-├── generate_stereo.py
-├── pretrained
-│   ├── depth_anything_v2_vitl.pth #Depth Anything V2 weights
-│   └── mix_all.pth #MonSter weights
-└── visualise_metric_st.py
+└──monster
+    ├── auto_record.py
+    ├── bagstoframe.py
+    ├── core #MonSter Core
+    ├── Depth-Anything-V2-list3 #Depth Anything V2 Core
+    ├── vk_sdk #vk_sdk from vksystems
+    ├── docker 
+    │   ├── Dockerfile
+    │   └── requirements.txt
+    ├── generate_stereo.py
+    └── pretrained
+        ├── depth_anything_v2_vitl.pth #Depth Anything V2 weights
+        └── mix_all.pth #MonSter weights
+
 ```
 
-## Loading target bags
-A bag file can be obtained using *auto_record.py* or directly loaded to */input_bags*
-```Shell
-#Pipeline bag recording with auto_record.py
-python3 auto_record.py -d <recording_duration>
-```
-
-## Obtaining disparity and depths
-The disparity heatmap can be directly obtained by running generate_stereo.py
-```Shell
-#Generate disparity heatmaps for bag at mcap_path
-python3 generate_stereo.py --mcap_path <path to mcap file>
-```
-
-To save depth information as .npy computed from disparity for further visualisation, run
-```Shell
-#Saving depth .npy data for depth visualisation
-python3 generate_stereo.py --mcap_path <path to mcap file> --save_numpy
-```
-
-By default, generate stereo wll utilise stereo1_l and stereo1_r pairs for disparity estimation. If the mcap contains two sets of stereo, stereo2 can be specified with
-```Shell
-python3 generate_stereo.py --mcap_path <path to mcap file> --stereo_2
-```
-
-## Visualisation
-To visualise the depth data generated, run
-```Shell
-streamlit run visualise_metric_st.py
-```
-A streamlit instance will then be launched providing depth data visualisation.
+## Getting Started
+To start the streamlit application, run:
+> docker compose up -d
+The streamlit interface to MonSter can then be accessed at http://localhost:8501
