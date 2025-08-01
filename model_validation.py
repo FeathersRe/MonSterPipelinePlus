@@ -49,7 +49,7 @@ def load_image(imfile):
     return img[None].to(DEVICE)
 
 def generate_stereo(args, fx, baseline):
-    model = torch.jit.load("monster_traced_model.pt")
+    model = torch.jit.load("monster_traced_model.onnx")
     model.to(DEVICE)
     model.eval()
 

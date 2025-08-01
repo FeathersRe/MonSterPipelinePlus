@@ -1,4 +1,4 @@
-# 🚀MonSter Pipeline
+# 🚀MonSter Pipeline (Cloud Conversion)
 
 ## Abstract
 The [MonSter](https://github.com/Junda24/MonSter/tree/main) disparity estimation model presents a novel approach of combining both monocular estimation and stereo matching methods in estimating image disparity. It takes in a set of stereo pair images as input, utilise [Depth AnythingV2](https://github.com/DepthAnything/Depth-Anything-V2)'s DINO V2 encoder and DPT encoder to generate monocular estimations, then enter a continuous stereo and mono guided refinement process to output an end disparity. 
@@ -69,3 +69,21 @@ To visualise the depth data generated, run
 streamlit run visualise_metric_st.py
 ```
 A streamlit instance will then be launched providing depth data visualisation.
+
+## Cloud Operations
+For this deviation of MonSter, cloud improvements were introduced to enable its deployment on the Qualcomm AI Hub
+
+### Model Tracing
+The *model_tracing.py* script traces the MonSter model into the .onnx format. To have it working, simply prepare one set of left and right images for tracing, then run
+```Shell
+> python3 model_tracing.py
+```
+
+### Model Valdation and Deployment to Cloud
+* The *model_validation.py* script validates the .onnx format model generated. The script can be executed in a similar manner to *generate_stereo.py*.
+* For the deployment of the model to the Qualcomm AI Cloud, use *cloud_validation.py*. Ater having your qai_token configured in qai_hub, simply run:
+```Shell
+> python3 cloud_validation.py
+```
+
+This executes the cloud pipelines and uploads the model to the ai hub to generate inference statistics.
